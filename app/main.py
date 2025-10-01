@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .database.config import create_db,engine
+from .database.DbConn import create_db,engine
 from contextlib import asynccontextmanager
 from .controller.endpoints import router as paths
 
