@@ -6,7 +6,7 @@ from sqlmodel import Session
 from config import Config
 from models.schemas import UserLogIn
 from database.DbConn import get_db
-from hashing import VerifyHashedPwd
+from auth.hashing import VerifyHashedPwd
 
 #important things for encoding and decoding
 algo = Config.algorithm
@@ -14,10 +14,10 @@ time_exp=Config.token_duration
 key = Config.secret_key
 
 # create a user_token
-def create_token(User:UserLogIn,db:Session=Depends(get_db)):
+def create_token(User:UserLogIn,db:Session=Depends(get_db))->str:
     data=UserLogIn(**User.model_dump())
     if not VerifyHashedPwd(data.email,data.password,db):
-        return
+        raise HTTPException(status_code=401, detail="Invalid Credentials")
     expire=datetime.now(timezone.utc)+timedelta(minutes=time_exp)
     payload:dict[str,int|str]={ 
                 "sub":data.email,
@@ -28,7 +28,7 @@ def create_token(User:UserLogIn,db:Session=Depends(get_db)):
     return token
 
 # verify a user_token
-def verify_token(token:str):
+def verify_token(token:str)->str:
     try:
         payload=jwt.decode(token,key,algorithms=[algo])
         sub: Optional[str] = payload.get("sub")
